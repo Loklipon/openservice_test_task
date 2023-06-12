@@ -48,7 +48,6 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         if 'type' in validated_data:
-            print('Обнаружили тип!')
             extract_type = validated_data.pop('type')
             if Type.objects.filter(**extract_type).exists():
                 type = Type.objects.get(**extract_type)
@@ -57,7 +56,6 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.type = type
             instance.save()
         if 'price' in validated_data:
-            print('Обнаружили цену!')
             extract_price = validated_data.pop('price')
             if Price.objects.filter(**extract_price).exists():
                 price = Price.objects.get(**extract_price)
