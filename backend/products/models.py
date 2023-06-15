@@ -3,7 +3,10 @@ from io import BytesIO
 import barcode
 from barcode.writer import ImageWriter
 from django.core.files import File
+from django.core.validators import MinLengthValidator
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch.dispatcher import receiver
 
 
 class Type(models.Model):
@@ -81,7 +84,10 @@ class Product(models.Model):
     barcode_number = models.CharField(
         max_length=12,
         unique=True,
-        verbose_name='Штрихкод'
+        verbose_name='Штрихкод',
+        validators=[
+            MinLengthValidator(12)
+        ]
     )
     date = models.DateTimeField(
         auto_now=True,
@@ -102,9 +108,17 @@ class Product(models.Model):
         return str(self.name)
 
     def save(self, *args, **kwargs):
+        self.barcode.delete(False)
         EAN = barcode.get_barcode_class('ean13')
         ean = EAN(f'{self.barcode_number}', writer=ImageWriter())
         buffer = BytesIO()
         ean.write(buffer)
-        self.barcode.save('barcode.png', File(buffer), save=False)
+        self.barcode.save(
+            f'barcode-{self.barcode_number}.png', File(buffer), save=False)
         return super().save(*args, **kwargs)
+
+
+@receiver(pre_delete, sender=Product)
+def image_model_delete(sender, instance, **kwargs):
+    if instance.barcode.name:
+        instance.barcode.delete(False)

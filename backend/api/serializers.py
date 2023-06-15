@@ -22,45 +22,43 @@ class PriceSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+
     """
     Сериализатор для отображения товаров.
     """
     price = PriceSerializer()
     type = TypeSerializer()
-    
+
     class Meta:
         model = Product
         fields = ('__all__')
-    
+
     def create(self, validated_data):
         extract_price = validated_data.pop('price')
         extract_type = validated_data.pop('type')
-        if Type.objects.filter(**extract_type).exists():
-            type = Type.objects.get(**extract_type)
-        else:
-            type = Type.objects.create(**extract_type)
-        if Price.objects.filter(**extract_price).exists():
-            price = Price.objects.get(**extract_price)
-        else:
-            price = Price.objects.create(**extract_price)
-        product = Product.objects.create(price=price, type=type, **validated_data)
+        type, created = Type.objects.get_or_create(**extract_type)
+        price, created = Price.objects.get_or_create(**extract_price)
+        product = Product.objects.create(
+            price=price, type=type, **validated_data)
         return product
-    
+
     def update(self, instance, validated_data):
         if 'type' in validated_data:
             extract_type = validated_data.pop('type')
-            if Type.objects.filter(**extract_type).exists():
-                type = Type.objects.get(**extract_type)
-            else:
-                type = Type.objects.create(**extract_type)
+            type, created = Type.objects.get_or_create(**extract_type)
             instance.type = type
             instance.save()
         if 'price' in validated_data:
             extract_price = validated_data.pop('price')
-            if Price.objects.filter(**extract_price).exists():
-                price = Price.objects.get(**extract_price)
-            else:
-                price = Price.objects.create(**extract_price)
+            price, created = Price.objects.get_or_create(**extract_price)
             instance.price = price
             instance.save()
         return super().update(instance, validated_data)
+
+
+class ProductSaleSerializer(serializers.ModelSerializer):
+    sales = serializers.IntegerField()
+
+    class Meta:
+        model = Product
+        fields = ('sales',)

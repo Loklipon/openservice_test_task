@@ -4,9 +4,9 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register('types', TypesView, basename='types')
-router.register('prices', PriceView, basename='pices')
-router.register('products', ProductView, basename='pices')
+router.register('prices', PriceView, basename='prices')
+router.register('products', ProductView, basename='products')
 urlpatterns = [
+    path('products/<int:id>/sale/', ProductSaleView.as_view()),
     path('', include(router.urls)),
-    path('sale/<int:pk>/<int:amount>', ProductSaleView.as_view())
 ]

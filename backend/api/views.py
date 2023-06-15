@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
-from api.serializers import PriceSerializer, ProductSerializer, TypeSerializer
+from api.serializers import (PriceSerializer, ProductSaleSerializer,
+                             ProductSerializer, TypeSerializer)
 from django.shortcuts import get_object_or_404
 from products.models import Price, Product, Type
 from rest_framework import viewsets
@@ -37,11 +38,16 @@ class ProductView(viewsets.ModelViewSet):
 
 class ProductSaleView(APIView):
     """
-    Вью-класс для изменения кол-ва
-    товара на передаваемое значение.
+    Вью-класс для уменьшения
+    остатка товара.
     """
-    def post(self, request, pk, amount):
-        product = get_object_or_404(Product, pk=pk)
-        product.quantity = product.quantity - amount
-        product.save()
-        return Response(HTTPStatus.OK)
+    def post(self, request, id):
+        serializer = ProductSaleSerializer(data=request.data)
+        if serializer.is_valid():
+            sale = serializer.data.get('sales')
+            product = get_object_or_404(Product, pk=id)
+            product.quantity = product.quantity - sale
+            product.save()
+            serializer = ProductSerializer(product)
+            return Response(serializer.data, status=HTTPStatus.OK)
+        return Response(serializer.errors, status=HTTPStatus.BAD_REQUEST)
